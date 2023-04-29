@@ -210,25 +210,18 @@ void mat4x4_mul(float out[4][4], const float a[4][4], const float b[4][4]) {
 
 // Multiply matrix with a vector
 
-void mat4x4_mul_vec4_normal(vec4 *out, const float m[4][4], const vec4 *v) {
-	out->x = m[0][0] * v->x + m[0][1] * v->y + m[0][2] * v->z + m[0][3] * v->w;
-	out->y = m[1][0] * v->x + m[1][1] * v->y + m[1][2] * v->z + m[1][3] * v->w;
-	out->z = m[2][0] * v->x + m[2][1] * v->y + m[2][2] * v->z + m[2][3] * v->w;
-	out->w = m[3][0] * v->x + m[3][1] * v->y + m[3][2] * v->z + m[3][3] * v->w;
-}
-
 void mat3x3_mul_vec3(vec3 *out, const float m[3][3], const vec3 *v) {
 	__m128 m0 = _mm_maskload_ps(m[0], _mm_setr_epi32(-1, -1, -1, 0));
 	__m128 m1 = _mm_maskload_ps(m[1], _mm_setr_epi32(-1, -1, -1, 0));
 	__m128 m2 = _mm_maskload_ps(m[2], _mm_setr_epi32(-1, -1, -1, 0));
-	__m128 v0 = _mm_maskload_ps(v, _mm_setr_epi32(-1, -1, -1, 0));
+	__m128 v0 = _mm_maskload_ps((float *)v, _mm_setr_epi32(-1, -1, -1, 0));
 	m0 = _mm_mul_ps(m0, v0);
 	m1 = _mm_mul_ps(m1, v0);
 	m2 = _mm_mul_ps(m2, v0);
 	m0 = _mm_hadd_ps(m0, m1);
 	m2 = _mm_hadd_ps(m2, m2);
 	m0 = _mm_hadd_ps(m0, m2);
-	_mm_storeu_ps(out, m0);
+	_mm_storeu_ps((float *)out, m0);
 }
 
 void mat4x4_mul_vec4(vec4 *out, const float m[4][4], const vec4 *v) {
@@ -236,7 +229,7 @@ void mat4x4_mul_vec4(vec4 *out, const float m[4][4], const vec4 *v) {
 	__m128 m1 = _mm_loadu_ps(m[1]);
 	__m128 m2 = _mm_loadu_ps(m[2]);
 	__m128 m3 = _mm_loadu_ps(m[3]);
-	__m128 v0 = _mm_loadu_ps(v);
+	__m128 v0 = _mm_loadu_ps((float *)v);
 	m0 = _mm_mul_ps(m0, v0);
 	m1 = _mm_mul_ps(m1, v0);
 	m2 = _mm_mul_ps(m2, v0);
@@ -244,5 +237,5 @@ void mat4x4_mul_vec4(vec4 *out, const float m[4][4], const vec4 *v) {
 	m0 = _mm_hadd_ps(m0, m1);
 	m2 = _mm_hadd_ps(m2, m3);
 	m0 = _mm_hadd_ps(m0, m2);
-	_mm_storeu_ps(out, m0);
+	_mm_storeu_ps((float *)out, m0);
 }

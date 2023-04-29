@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -march=native -lm -g
+CFLAGS=-fno-plt -fno-pic -static -static-libgcc -Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -lm -g
 SRCS=$(wildcard *.c)
 HDRS=$(wildcard *.h)
 OBJS=$(SRCS:.c=.o)
