@@ -5,50 +5,38 @@
 
 int numVertices;
 int numTriangles;
-float *verticies;
-float *transVerts;
-int *triangles;
+vec3 *verticies;
+vec3 *transVerts;
+vec3i *triangles;
 
-inline void centroid(float centroid[3], int *tri) {
-	centroid[0] = (verticies[tri[0] * 3] + verticies[tri[1] * 3] + verticies[tri[2] * 3]) / 3;
-	centroid[1] = (verticies[tri[0] * 3 + 1] + verticies[tri[1] * 3 + 1] + verticies[tri[2] * 3 + 1]) / 3;
-	centroid[2] = (verticies[tri[0] * 3 + 2] + verticies[tri[1] * 3 + 2] + verticies[tri[2] * 3 + 2]) / 3;
+inline void centroid(vec3 *centroid, vec3i *tri) {
+	centroid->x = (verticies[tri->x].x + verticies[tri->y].x + verticies[tri->z].x) / 3;
+	centroid->y = (verticies[tri->x].y + verticies[tri->y].y + verticies[tri->z].y) / 3;
+	centroid->z = (verticies[tri->x].z + verticies[tri->y].z + verticies[tri->z].z) / 3;
 }
 
-void sort(int *start, int *end) {
+void sort(vec3i *start, vec3i *end) {
 	if (start >= end)
 		return;
-	int *l = start + 3;
-	int *r = end;
-	float p = (transVerts[start[0] * 3 + 2] + transVerts[start[1] * 3 + 2] + transVerts[start[2] * 3 + 2]) / 3;
+	vec3i *l = start + 1;
+	vec3i *r = end;
+	float p = (transVerts[start->x].z + transVerts[start->y].z + transVerts[start->z].z) / 3;
 	while (l <= r) {
-		while (l <= r && (transVerts[l[0] * 3 + 2] + transVerts[l[1] * 3 + 2] + transVerts[l[2] * 3 + 2]) <= p)
-			l += 3;
-		while (l <= r && (transVerts[r[0] * 3 + 2] + transVerts[r[1] * 3 + 2] + transVerts[r[2] * 3 + 2]) > p)
-			r -= 3;
+		while (l <= r && (transVerts[l->x].z + transVerts[l->y].z + transVerts[l->z].z) <= p)
+			l++;
+		while (l <= r && (transVerts[r->x].z + transVerts[r->y].z + transVerts[r->z].z) > p)
+			r--;
 		if (l < r) {
-			int t = *l;
+			vec3i t = *l;
 			*l = *r;
 			*r = t;
-			t = *(l + 1);
-			*(l + 1) = *(r + 1);
-			*(r + 1) = t;
-			t = *(l + 2);
-			*(l + 2) = *(r + 2);
-			*(r + 2) = t;
 		}
 	}
-	int t = *start;
+	vec3i t = *start;
 	*start = *r;
 	*r = t;
-	t = *(start + 1);
-	*(start + 1) = *(r + 1);
-	*(r + 1) = t;
-	t = *(start + 2);
-	*(start + 2) = *(r + 2);
-	*(r + 2) = t;
-	sort(start, r - 3);
-	sort(r + 3, end);
+	sort(start, r - 1);
+	sort(r + 1, end);
 }
 
 int parseFile() {
@@ -72,41 +60,40 @@ int parseFile() {
 		if (line)
 			line++;
 	}
-	verticies = malloc(numVertices * 3 * sizeof(float));
-	triangles = malloc(numTriangles * 3 * sizeof(int));
-	transVerts = malloc(numVertices * 3 * sizeof(float));
+	verticies = malloc(numVertices * sizeof(vec3));
+	triangles = malloc(numTriangles * sizeof(vec3i));
+	transVerts = malloc(numVertices * sizeof(vec3));
 	line = map;
 	int v = 0;
 	int t = 0;
 	while (line) {
 		if (line[0] == 'v' && line[1] == ' ') {
-			sscanf(line, "v %f %f %f", &verticies[v], &verticies[v + 1], &verticies[v + 2]);
-			v += 3;
+			vec3 *vert = verticies + v;
+			sscanf(line, "v %f %f %f", &vert->x, &vert->y, &vert->z);
+			v++;
 		} else if (line[0] == 'f' && line[1] == ' ') {
-			sscanf(line, "f %d %d %d", &triangles[t], &triangles[t + 1], &triangles[t + 2]);
-			triangles[t]--;
-			triangles[t + 1]--;
-			triangles[t + 2]--;
-			t += 3;
+			vec3i *tri = triangles + t;
+			sscanf(line, "f %d %d %d", &tri->x, &tri->y, &tri->z);
+			t++;
 		}
 		line = strchr(line, '\n');
 		if (line)
 			line++;
 	}
 	munmap(map, ftell(fp) + 1);
-	memcpy(transVerts, verticies, numVertices * 3 * sizeof(float));
+	memcpy(transVerts, verticies, numVertices * sizeof(vec3i));
 	return 0;
 }
 
-// int main() {
-// 	if (parseFile())
-// 		return 1;
-// 	printf("Num Verticies: %d\n", numVertices);
-// 	// while (true) {
-// 	clock_t start = clock();
-// 	sort(triangles, triangles + numTriangles * 3 - 1);
-// 	clock_t end = clock();
-// 	printf("%f\n", (double)(end - start) / CLOCKS_PER_SEC);
-// 	// }
-// 	return 0;
-// }
+int main() {
+	if (parseFile())
+		return 1;
+	printf("Num Verticies: %d\n", numVertices);
+	// while (true) {
+	clock_t start = clock();
+	sort(triangles, triangles + numTriangles - 1);
+	clock_t end = clock();
+	printf("%f\n", (double)(end - start) / CLOCKS_PER_SEC);
+	// }
+	return 0;
+}

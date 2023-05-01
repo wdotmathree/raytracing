@@ -46,3 +46,10 @@ void vec3_negate(vec3 *out, const vec3 *a) {
 	out->y = -a->y;
 	out->z = -a->z;
 }
+
+void vec3_tovec4(vec4 *out, const vec3 *a) {
+	out->x = a->x;
+	out->y = a->y;
+	out->z = a->z;
+	out->w = 1;
+}

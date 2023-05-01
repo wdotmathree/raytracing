@@ -11,7 +11,13 @@ typedef struct vec2 {
 
 typedef struct vec3 {
 	float x, y, z;
+	__uint32_t __padding;
 } vec3;
+
+typedef struct vec3i {
+	int x, y, z;
+	__uint32_t __padding;
+} vec3i;
 
 typedef struct vec4 {
 	float x, y, z, w;
