@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-fno-plt -fno-pic -static -static-libgcc -Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -lm -g
+CFLAGS=-Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -lm -g $(shell sdl2-config --cflags --libs)
 SRCS=$(wildcard *.c)
 HDRS=$(wildcard *.h)
 OBJS=$(SRCS:.c=.o)
@@ -12,7 +12,7 @@ debug: a.out
 
 release: CFLAGS += -O3
 release: a.out
-	strip -s a.out
+	# strip -s a.out
 
 a.out: $(OBJS) $(CUOBJS)
 	$(CC) $(OBJS) $(CUOBJS) $(CFLAGS)

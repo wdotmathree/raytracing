@@ -2,20 +2,20 @@
 
 // Get an identity matrix
 
-void mat2x2_identity(float m[2][2]) {
+void mat2x2_identity(mat2 m) {
 	memset(m, 0, sizeof(float) * 4);
 	m[0][0] = 1;
 	m[1][1] = 1;
 }
 
-void mat3x3_identity(float m[3][3]) {
+void mat3x3_identity(mat3 m) {
 	memset(m, 0, sizeof(float) * 9);
 	m[0][0] = 1;
 	m[1][1] = 1;
 	m[2][2] = 1;
 }
 
-void mat4x4_identity(float m[4][4]) {
+void mat4x4_identity(mat4 m) {
 	memset(m, 0, sizeof(float) * 16);
 	m[0][0] = 1;
 	m[1][1] = 1;
@@ -25,13 +25,13 @@ void mat4x4_identity(float m[4][4]) {
 
 // Transpose a matrix
 
-void mat2x2_transpose(float m[2][2]) {
+void mat2x2_transpose(mat2 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
 }
 
-void mat3x3_transpose(float m[3][3]) {
+void mat3x3_transpose(mat3 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
@@ -43,7 +43,7 @@ void mat3x3_transpose(float m[3][3]) {
 	m[2][1] = tmp;
 }
 
-void mat4x4_transpose(float m[4][4]) {
+void mat4x4_transpose(mat4 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
@@ -66,14 +66,14 @@ void mat4x4_transpose(float m[4][4]) {
 
 // Get the determinant of a matrix
 
-float mat2x2_det(const float m[2][2]) { return m[0][0] * m[1][1] - m[0][1] * m[1][0]; }
+float mat2x2_det(const mat2 m) { return m[0][0] * m[1][1] - m[0][1] * m[1][0]; }
 
-float mat3x3_det(const float m[3][3]) {
+float mat3x3_det(const mat3 m) {
 	return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
 		   m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 }
 
-float mat4x4_det(const float m[4][4]) {
+float mat4x4_det(const mat4 m) {
 	return m[0][0] * (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
 					  m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])) -
 		   m[0][1] * (m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
@@ -86,7 +86,7 @@ float mat4x4_det(const float m[4][4]) {
 
 // Invert a matrix
 
-float mat2x2_invert(float inv[2][2], const float m[2][2]) {
+float mat2x2_invert(mat2 inv, const mat2 m) {
 	float det = mat2x2_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
@@ -97,7 +97,7 @@ float mat2x2_invert(float inv[2][2], const float m[2][2]) {
 	return det;
 }
 
-float mat3x3_invert(float inv[3][3], const float m[3][3]) {
+float mat3x3_invert(mat3 inv, const mat3 m) {
 	float det = mat3x3_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
@@ -113,7 +113,7 @@ float mat3x3_invert(float inv[3][3], const float m[3][3]) {
 	return det;
 }
 
-float mat4x4_invert(float inv[4][4], const float m[4][4]) {
+float mat4x4_invert(mat4 inv, const mat4 m) {
 	float det = mat4x4_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
@@ -170,14 +170,14 @@ float mat4x4_invert(float inv[4][4], const float m[4][4]) {
 
 // Multiply two matrices
 
-void mat2x2_mul(float out[2][2], const float a[2][2], const float b[2][2]) {
+void mat2x2_mul(mat2 out, const mat2 a, const mat2 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1];
 	out[1][0] = a[1][0] * b[0][0] + a[1][1] * b[1][0];
 	out[1][1] = a[1][0] * b[0][1] + a[1][1] * b[1][1];
 }
 
-void mat3x3_mul(float out[3][3], const float a[3][3], const float b[3][3]) {
+void mat3x3_mul(mat3 out, const mat3 a, const mat3 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];
 	out[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2];
@@ -189,7 +189,7 @@ void mat3x3_mul(float out[3][3], const float a[3][3], const float b[3][3]) {
 	out[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
 }
 
-void mat4x4_mul(float out[4][4], const float a[4][4], const float b[4][4]) {
+void mat4x4_mul(mat4 out, const mat4 a, const mat4 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0] + a[0][3] * b[3][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1] + a[0][3] * b[3][1];
 	out[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2] + a[0][3] * b[3][2];
@@ -210,7 +210,7 @@ void mat4x4_mul(float out[4][4], const float a[4][4], const float b[4][4]) {
 
 // Multiply matrix with a vector
 
-void mat3x3_mul_vec3(vec3 *out, const float m[3][3], const vec3 *v) {
+void mat3x3_mul_vec3(vec3 *out, const mat3 m, const vec3 *v) {
 	__m128 m0 = _mm_maskload_ps(m[0], _mm_setr_epi32(-1, -1, -1, 0));
 	__m128 m1 = _mm_maskload_ps(m[1], _mm_setr_epi32(-1, -1, -1, 0));
 	__m128 m2 = _mm_maskload_ps(m[2], _mm_setr_epi32(-1, -1, -1, 0));
@@ -224,7 +224,7 @@ void mat3x3_mul_vec3(vec3 *out, const float m[3][3], const vec3 *v) {
 	_mm_storeu_ps((float *)out, m0);
 }
 
-void mat4x4_mul_vec4(vec4 *out, const float m[4][4], const vec4 *v) {
+void mat4x4_mul_vec4(vec4 *out, const mat4 m, const vec4 *v) {
 	__m128 m0 = _mm_loadu_ps(m[0]);
 	__m128 m1 = _mm_loadu_ps(m[1]);
 	__m128 m2 = _mm_loadu_ps(m[2]);

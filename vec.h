@@ -39,4 +39,6 @@ void vec3_scale(vec3 *out, const vec3 *a, float s);
 
 void vec3_negate(vec3 *out, const vec3 *a);
 
+void vec3_tovec4(vec4 *out, const vec3 *a);
+
 #endif
