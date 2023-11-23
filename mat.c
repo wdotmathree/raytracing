@@ -2,20 +2,20 @@
 
 // Get an identity matrix
 
-void mat2x2_identity(mat2 m) {
+void mat2_identity(mat2 m) {
 	memset(m, 0, sizeof(float) * 4);
 	m[0][0] = 1;
 	m[1][1] = 1;
 }
 
-void mat3x3_identity(mat3 m) {
+void mat3_identity(mat3 m) {
 	memset(m, 0, sizeof(float) * 9);
 	m[0][0] = 1;
 	m[1][1] = 1;
 	m[2][2] = 1;
 }
 
-void mat4x4_identity(mat4 m) {
+void mat4_identity(mat4 m) {
 	memset(m, 0, sizeof(float) * 16);
 	m[0][0] = 1;
 	m[1][1] = 1;
@@ -25,13 +25,13 @@ void mat4x4_identity(mat4 m) {
 
 // Transpose a matrix
 
-void mat2x2_transpose(mat2 m) {
+void mat2_transpose(mat2 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
 }
 
-void mat3x3_transpose(mat3 m) {
+void mat3_transpose(mat3 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
@@ -43,7 +43,7 @@ void mat3x3_transpose(mat3 m) {
 	m[2][1] = tmp;
 }
 
-void mat4x4_transpose(mat4 m) {
+void mat4_transpose(mat4 m) {
 	float tmp = m[0][1];
 	m[0][1] = m[1][0];
 	m[1][0] = tmp;
@@ -66,14 +66,16 @@ void mat4x4_transpose(mat4 m) {
 
 // Get the determinant of a matrix
 
-float mat2x2_det(const mat2 m) { return m[0][0] * m[1][1] - m[0][1] * m[1][0]; }
+float mat2_det(const mat2 m) {
+	return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+}
 
-float mat3x3_det(const mat3 m) {
+float mat3_det(const mat3 m) {
 	return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
 		   m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 }
 
-float mat4x4_det(const mat4 m) {
+float mat4_det(const mat4 m) {
 	return m[0][0] * (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
 					  m[1][3] * (m[2][1] * m[3][2] - m[2][2] * m[3][1])) -
 		   m[0][1] * (m[1][0] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][2] * (m[2][0] * m[3][3] - m[2][3] * m[3][0]) +
@@ -86,8 +88,8 @@ float mat4x4_det(const mat4 m) {
 
 // Invert a matrix
 
-float mat2x2_invert(mat2 inv, const mat2 m) {
-	float det = mat2x2_det(m);
+float mat2_invert(mat2 inv, const mat2 m) {
+	float det = mat2_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
 	inv[0][0] = m[1][1] / det;
@@ -97,8 +99,8 @@ float mat2x2_invert(mat2 inv, const mat2 m) {
 	return det;
 }
 
-float mat3x3_invert(mat3 inv, const mat3 m) {
-	float det = mat3x3_det(m);
+float mat3_invert(mat3 inv, const mat3 m) {
+	float det = mat3_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
 	inv[0][0] = (m[1][1] * m[2][2] - m[1][2] * m[2][1]) / det;
@@ -113,8 +115,8 @@ float mat3x3_invert(mat3 inv, const mat3 m) {
 	return det;
 }
 
-float mat4x4_invert(mat4 inv, const mat4 m) {
-	float det = mat4x4_det(m);
+float mat4_invert(mat4 inv, const mat4 m) {
+	float det = mat4_det(m);
 	if (__builtin_expect(det == 0, false))
 		return 0;
 	inv[0][0] = (m[1][1] * (m[2][2] * m[3][3] - m[2][3] * m[3][2]) - m[1][2] * (m[2][1] * m[3][3] - m[2][3] * m[3][1]) +
@@ -170,14 +172,14 @@ float mat4x4_invert(mat4 inv, const mat4 m) {
 
 // Multiply two matrices
 
-void mat2x2_mul(mat2 out, const mat2 a, const mat2 b) {
+void mat2_mul(mat2 out, const mat2 a, const mat2 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1];
 	out[1][0] = a[1][0] * b[0][0] + a[1][1] * b[1][0];
 	out[1][1] = a[1][0] * b[0][1] + a[1][1] * b[1][1];
 }
 
-void mat3x3_mul(mat3 out, const mat3 a, const mat3 b) {
+void mat3_mul(mat3 out, const mat3 a, const mat3 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1];
 	out[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2];
@@ -189,7 +191,7 @@ void mat3x3_mul(mat3 out, const mat3 a, const mat3 b) {
 	out[2][2] = a[2][0] * b[0][2] + a[2][1] * b[1][2] + a[2][2] * b[2][2];
 }
 
-void mat4x4_mul(mat4 out, const mat4 a, const mat4 b) {
+void mat4_mul(mat4 out, const mat4 a, const mat4 b) {
 	out[0][0] = a[0][0] * b[0][0] + a[0][1] * b[1][0] + a[0][2] * b[2][0] + a[0][3] * b[3][0];
 	out[0][1] = a[0][0] * b[0][1] + a[0][1] * b[1][1] + a[0][2] * b[2][1] + a[0][3] * b[3][1];
 	out[0][2] = a[0][0] * b[0][2] + a[0][1] * b[1][2] + a[0][2] * b[2][2] + a[0][3] * b[3][2];
@@ -210,32 +212,44 @@ void mat4x4_mul(mat4 out, const mat4 a, const mat4 b) {
 
 // Multiply matrix with a vector
 
-void mat3x3_mul_vec3(vec3 *out, const mat3 m, const vec3 *v) {
-	__m128 m0 = _mm_maskload_ps(m[0], _mm_setr_epi32(-1, -1, -1, 0));
-	__m128 m1 = _mm_maskload_ps(m[1], _mm_setr_epi32(-1, -1, -1, 0));
-	__m128 m2 = _mm_maskload_ps(m[2], _mm_setr_epi32(-1, -1, -1, 0));
-	__m128 v0 = _mm_maskload_ps((float *)v, _mm_setr_epi32(-1, -1, -1, 0));
-	m0 = _mm_mul_ps(m0, v0);
-	m1 = _mm_mul_ps(m1, v0);
-	m2 = _mm_mul_ps(m2, v0);
-	m0 = _mm_hadd_ps(m0, m1);
-	m2 = _mm_hadd_ps(m2, m2);
-	m0 = _mm_hadd_ps(m0, m2);
-	_mm_storeu_ps((float *)out, m0);
+void mat2_mul_vec(vec2 *out, const mat2 m, const vec2 *v) {
+	if (out == v) {
+		vec2 new;
+		new.x = m[0][0] * v->x + m[0][1] * v->y;
+		new.y = m[1][0] * v->x + m[1][1] * v->y;
+		*out = new;
+	} else {
+		out->x = m[0][0] * v->x + m[0][1] * v->y;
+		out->y = m[1][0] * v->x + m[1][1] * v->y;
+	}
 }
 
-void mat4x4_mul_vec4(vec4 *out, const mat4 m, const vec4 *v) {
-	__m128 m0 = _mm_loadu_ps(m[0]);
-	__m128 m1 = _mm_loadu_ps(m[1]);
-	__m128 m2 = _mm_loadu_ps(m[2]);
-	__m128 m3 = _mm_loadu_ps(m[3]);
-	__m128 v0 = _mm_loadu_ps((float *)v);
-	m0 = _mm_mul_ps(m0, v0);
-	m1 = _mm_mul_ps(m1, v0);
-	m2 = _mm_mul_ps(m2, v0);
-	m3 = _mm_mul_ps(m3, v0);
-	m0 = _mm_hadd_ps(m0, m1);
-	m2 = _mm_hadd_ps(m2, m3);
-	m0 = _mm_hadd_ps(m0, m2);
-	_mm_storeu_ps((float *)out, m0);
+void mat3_mul_vec(vec3 *out, const mat3 m, const vec3 *v) {
+	if (out == v) {
+		vec3 new;
+		new.x = m[0][0] * v->x + m[0][1] * v->y + m[0][2] * v->z;
+		new.y = m[1][0] * v->x + m[1][1] * v->y + m[1][2] * v->z;
+		new.z = m[2][0] * v->x + m[2][1] * v->y + m[2][2] * v->z;
+		*out = new;
+	} else {
+		out->x = m[0][0] * v->x + m[0][1] * v->y + m[0][2] * v->z;
+		out->y = m[1][0] * v->x + m[1][1] * v->y + m[1][2] * v->z;
+		out->z = m[2][0] * v->x + m[2][1] * v->y + m[2][2] * v->z;
+	}
+}
+
+void mat4_mul_vec(vec4 *out, const mat4 m, const vec4 *v) {
+	if (out == v) {
+		vec4 new;
+		new.x = m[0][0] * v->x + m[0][1] * v->y + m[0][2] * v->z + m[0][3] * v->w;
+		new.y = m[1][0] * v->x + m[1][1] * v->y + m[1][2] * v->z + m[1][3] * v->w;
+		new.z = m[2][0] * v->x + m[2][1] * v->y + m[2][2] * v->z + m[2][3] * v->w;
+		new.w = m[3][0] * v->x + m[3][1] * v->y + m[3][2] * v->z + m[3][3] * v->w;
+		*out = new;
+	} else {
+		out->x = m[0][0] * v->x + m[0][1] * v->y + m[0][2] * v->z + m[0][3] * v->w;
+		out->y = m[1][0] * v->x + m[1][1] * v->y + m[1][2] * v->z + m[1][3] * v->w;
+		out->z = m[2][0] * v->x + m[2][1] * v->y + m[2][2] * v->z + m[2][3] * v->w;
+		out->w = m[3][0] * v->x + m[3][1] * v->y + m[3][2] * v->z + m[3][3] * v->w;
+	}
 }

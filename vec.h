@@ -2,8 +2,7 @@
 #ifndef VEC_H
 #define VEC_H
 
-#include <math.h>
-#include <stdbool.h>
+#include "consts.h"
 
 typedef struct vec2 {
 	float x, y;
@@ -11,12 +10,12 @@ typedef struct vec2 {
 
 typedef struct vec3 {
 	float x, y, z;
-	__uint32_t __padding;
+	char __padding[4];
 } vec3;
 
 typedef struct vec3i {
 	int x, y, z;
-	__uint32_t __padding;
+	char __padding[4];
 } vec3i;
 
 typedef struct vec4 {

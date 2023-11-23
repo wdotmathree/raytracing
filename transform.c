@@ -63,7 +63,10 @@ void project(float out[4][4], float fov, float aspect, float near, float far) {
 	out[3][3] = 1;
 }
 
-void to_screen(vec2 *out, vec3 *in) {
+void to_screen(vec3 *out, vec3 *in) {
 	out->x = (in->x / in->z + 1) * WIDTH / 2;
 	out->y = (in->y / in->z + 1) * HEIGHT / 2;
+	out->z = in->z;
+	out->x = fminf(fmaxf(out->x, 0), WIDTH - 1);
+	out->y = fminf(fmaxf(out->y, 0), HEIGHT - 1);
 }
