@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -falign-functions=16 -lm -lpthread -g $(shell sdl2-config --cflags --libs)
+CFLAGS=-fsanitize=address,undefined -Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -falign-functions=16 -lm -lpthread -g $(shell sdl2-config --cflags --libs)
 SRCS=$(wildcard *.c)
 HDRS=$(wildcard *.h)
 OBJS=$(SRCS:.c=.o)
