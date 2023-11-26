@@ -87,16 +87,16 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	vec3_sub(&pa, a, point);
 	vec3_sub(&pb, b, point);
 	vec3_sub(&pc, c, point);
+	// Check if the point is one of the vertices
+	if (__builtin_expect(fabsf(pa.x) + fabsf(pa.y) + fabsf(pa.z) < 3 * LINALG_EPSILON, false))
+		return true;
+	if (__builtin_expect(fabsf(pb.x) + fabsf(pa.y) + fabsf(pa.z) < 3 * LINALG_EPSILON, false))
+		return true;
+	if (__builtin_expect(fabsf(pc.x) + fabsf(pa.y) + fabsf(pa.z) < 3 * LINALG_EPSILON, false))
+		return true;
 	vec3_normalize(&pa, &pa);
 	vec3_normalize(&pb, &pb);
 	vec3_normalize(&pc, &pc);
-	// Check if the point is one of the vertices
-	if (__builtin_expect(pa.x == 0 && pa.y == 0 && pa.z == 0, false))
-		return true;
-	if (__builtin_expect(pb.x == 0 && pb.y == 0 && pb.z == 0, false))
-		return true;
-	if (__builtin_expect(pc.x == 0 && pc.y == 0 && pc.z == 0, false))
-		return true;
 	// Check if point is on the edge of the triangle
 	// Get the vector for each edge
 	vec3 ab, bc, ca;
@@ -108,13 +108,13 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	vec3_normalize(&ca, &ca);
 	// Check if point is on edge AB
 	// P->A and P->B should be opposite each other (dot product should be -1)
-	if (__builtin_expect(vec3_dot(&pa, &pb) < -1 + __FLT_EPSILON__, false))
+	if (__builtin_expect(vec3_dot(&pa, &pb) < -1 + LINALG_EPSILON, false))
 		return true;
 	// Check if point is on edge BC
-	if (__builtin_expect(vec3_dot(&pb, &pc) < -1 + __FLT_EPSILON__, false))
+	if (__builtin_expect(vec3_dot(&pb, &pc) < -1 + LINALG_EPSILON, false))
 		return true;
 	// Check if point is on edge CA
-	if (__builtin_expect(vec3_dot(&pc, &pa) < -1 + __FLT_EPSILON__, false))
+	if (__builtin_expect(vec3_dot(&pc, &pa) < -1 + LINALG_EPSILON, false))
 		return true;
 	// Check if point is coplanar with triangle
 	// Get normal vector for triangle plane
@@ -123,7 +123,7 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	vec3_normalize(&normal, &normal);
 	// If point is coplanar, dot product of normal and point vectors will be 0
 	// since the normal of the plane is perpendicular to the vector of a triangle edge
-	if (__builtin_expect(fabsf(vec3_dot(&normal, &pa)) > __FLT_EPSILON__, false))
+	if (__builtin_expect(fabsf(vec3_dot(&normal, &pa)) > LINALG_EPSILON, false))
 		return false;
 	// Get cross products (will be normal to the plane, if all are pointing the same direction then the point is inside)
 	vec3 c1, c2, c3;
@@ -133,17 +133,17 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	vec3_normalize(&c1, &c1);
 	vec3_normalize(&c2, &c2);
 	vec3_normalize(&c3, &c3);
-	if (fabsf(c1.x - c2.x) > __FLT_EPSILON__)
+	if (fabsf(c1.x - c2.x) > LINALG_EPSILON)
 		return false;
-	if (fabsf(c1.x - c3.x) > __FLT_EPSILON__)
+	if (fabsf(c1.x - c3.x) > LINALG_EPSILON)
 		return false;
-	if (fabsf(c1.y - c2.y) > __FLT_EPSILON__)
+	if (fabsf(c1.y - c2.y) > LINALG_EPSILON)
 		return false;
-	if (fabsf(c1.y - c3.y) > __FLT_EPSILON__)
+	if (fabsf(c1.y - c3.y) > LINALG_EPSILON)
 		return false;
-	if (fabsf(c1.z - c2.z) > __FLT_EPSILON__)
+	if (fabsf(c1.z - c2.z) > LINALG_EPSILON)
 		return false;
-	return fabsf(c1.z - c3.z) < __FLT_EPSILON__;
+	return fabsf(c1.z - c3.z) < LINALG_EPSILON;
 }
 
 int intersect_plane_triangle(vec3 *out1, vec3 *out2, const plane *p, const vec3 *a, const vec3 *b, const vec3 *c) {

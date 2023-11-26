@@ -17,7 +17,7 @@ typedef float mat4[4][4];
 
 static const int FOV = 90;
 static const float ASPECT = (float)HEIGHT / WIDTH;
-static const float NEAR = 1;
-static const float FAR = 10;
+static const float NEAR = 0.1f;
+static const float FAR = 100.0f;
 
 #endif

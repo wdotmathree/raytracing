@@ -4,10 +4,19 @@ vec3_arr vec3_arr_init(void) {
 	return (vec3_arr){NULL, 0, 0};
 }
 
+vec3_arr *vec3_arr_new(void) {
+	vec3_arr *arr = malloc(sizeof(vec3_arr));
+	*arr = vec3_arr_init();
+	return arr;
+}
+
 void vec3_arr_reserve(vec3_arr *arr, const size_t n) {
 	if (arr->capacity < n) {
 		arr->capacity = n;
-		arr->data = realloc(arr->data, arr->capacity * sizeof(vec3));
+		if (arr->data)
+			arr->data = realloc(arr->data, arr->capacity * sizeof(vec3));
+		else
+			arr->data = malloc(arr->capacity * sizeof(vec3));
 	}
 }
 

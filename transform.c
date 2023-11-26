@@ -68,5 +68,5 @@ void to_screen(vec3 *out, vec3 *in) {
 	out->y = (in->y / in->z + 1) * HEIGHT / 2;
 	out->z = in->z;
 	out->x = fminf(fmaxf(out->x, 0), WIDTH - 1);
-	out->y = fminf(fmaxf(out->y, 0), HEIGHT - 1);
+	out->y = HEIGHT - 1 - fminf(fmaxf(out->y, 0), HEIGHT - 1);
 }

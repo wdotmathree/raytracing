@@ -15,6 +15,13 @@ typedef struct vec3_arr {
 vec3_arr vec3_arr_init(void);
 
 /**
+ * @brief Allocate a vec3_arr on the heap
+ *
+ * @return The allocated vec3_arr
+ */
+vec3_arr *vec3_arr_new(void);
+
+/**
  * @brief Reserve space in a vec3_arr
  *
  * @param arr The vec3_arr to reserve space for
