@@ -1,7 +1,7 @@
 CC=nvcc
 CFLAGS=-rdc=true -lm -lpthread -g $(shell sdl2-config --cflags --libs)
 SRCS=$(wildcard *.cu)
-HDRS=$(wildcard *.h)
+HDRS=$(wildcard *.hpp)
 OBJS=$(SRCS:.cu=.o)
 
 .PHONY: debug release test clean

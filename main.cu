@@ -14,7 +14,7 @@
 #include <vector>
 
 const int FPS = 15;
-const float3 light = {0, 0, -10};
+const float3 g_light = {0, 0, -10};
 float3 camera = {2, 1, -5};
 float2 look = {0, 0};
 
@@ -369,8 +369,15 @@ void *renderLoop(void *args) {
 			mat4_mul_vec(&v, t2, &v);
 			memcpy(&transVerts[i], &v, sizeof(float3));
 		}
+		float4 tmp_light;
+		vec3_tovec4(&tmp_light, &g_light);
+		mat4_mul_vec(&tmp_light, t2, &tmp_light);
+		float3 light;
+		light.x = tmp_light.x;
+		light.y = tmp_light.y;
+		light.z = tmp_light.z;
 		if (raytrace) {
-			raytrace_render(middle_buffer, transVerts, triangles, proj, numTriangles);
+			raytrace_render(middle_buffer, transVerts, triangles, numTriangles, proj, (float3 *)&light);
 		} else {
 			// Collect the verticies into triangles
 			float3 **triVerticies = (float3 **)malloc(numTriangles * 3 * sizeof(float3 *));
@@ -400,6 +407,7 @@ void *renderLoop(void *args) {
 				// get the luminance
 				float3 cent, norm, ab, ac, normcent;
 				centroid(&cent, a, b, c);
+				vec3_sub(&cent, &cent, &light);
 				vec3_normalize(&normcent, &cent);
 				vec3_sub(&ab, b, a);
 				vec3_sub(&ac, c, a);
@@ -461,7 +469,7 @@ int main() {
 				else if (e.key.keysym.sym == SDLK_r)
 					raytrace = !raytrace;
 		}
-		printf("%f %f %f\n", camera.x, camera.y, camera.z);
+		// printf("%f %f %f\n", camera.x, camera.y, camera.z);
 		// Update screen
 		long long time = SDL_GetTicks();
 		SDL_LockSurface(s);

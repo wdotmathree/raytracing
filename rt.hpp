@@ -1,3 +1,3 @@
 #include "consts.hpp"
 
-void raytrace_render(uint32_t *, float3 *, uint3 *, mat4, int);
+void raytrace_render(uint32_t *out, float3 *verts, uint3 *tris, int numTris, mat4 proj, float3 *light);

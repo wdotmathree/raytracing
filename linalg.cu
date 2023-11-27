@@ -147,7 +147,7 @@ special int intersect_plane_triangle(float3 *out1, float3 *out2, const plane *p,
 	vec3_sub(&ab, b, a);
 	vec3_sub(&ac, c, a);
 	vec3_cross((float3 *)&tri, &ab, &ac);
-	tri.w = -(tri.x * a->x + tri.y * a->y + tri.z * a->z);
+	tri.w = -vec3_dot((const float3 *)&tri, a);
 	// Get the line of intersection between the two planes
 	ray l_int, l_edge;
 	if (!intersect_plane_plane(&l_int, p, &tri))

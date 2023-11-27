@@ -16,7 +16,7 @@
 
 #define special __host__ __device__
 
-#define LINALG_EPSILON 0.001f
+#define LINALG_EPSILON 0.0001f
 
 static const int WIDTH = 1920;
 static const int HEIGHT = 1080;
