@@ -12,8 +12,10 @@
 
 const int FPS = 15;
 const vec3 light = {0, 0, -10};
-vec3 camera = {17, 8, -15};
+vec3 camera = {2, 1, -5};
 vec2 look = {0, 0};
+
+bool raytrace = false;
 
 int numVerticies;
 int numTriangles;
@@ -237,7 +239,6 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 	vec3_arr *clipped = vec3_arr_new();
 	vec3_arr *tmp = vec3_arr_new();
 	vec3_arr inside = vec3_arr_init();
-	vec3_arr outside = vec3_arr_init();
 	vec3_arr_reserve(clipped, numVerts * 2);
 	vec3_arr_reserve(tmp, numVerts * 2);
 	for (int i = 0; i < numVerts; i++)
@@ -247,7 +248,6 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 		vec3_arr_clear(clipped);
 		for (int j = 0; j < tmp->size; j += 3) {
 			vec3_arr_clear(&inside);
-			vec3_arr_clear(&outside);
 			vec3 *a = &tmp->data[j];
 			vec3 *b = &tmp->data[j + 1];
 			vec3 *c = &tmp->data[j + 2];
@@ -269,30 +269,35 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 				vec3_arr_push(clipped, c);
 				continue;
 			}
-			bool used = false;
+			/// TODO: Fix this part
+			bool used = false; // If we have used out1 yet
+			int outside = 0; // How many verticies are outside the visible area
+			// Inside are the points A,B,C (in order) and their replacements (out1, out2) if they are outside
 			if (is_in(a, i)) {
 				vec3_arr_push(&inside, a);
 			} else {
+				// Use out1 as a replacement for A
 				vec3_arr_push(&inside, &out1);
 				used = true;
-				vec3_arr_push(&outside, a);
+				outside++;
 			}
 			if (is_in(b, i)) {
 				vec3_arr_push(&inside, b);
 			} else {
+				// Use out2 if we have already used out1, otherwise use out1
 				vec3_arr_push(&inside, used ? &out2 : &out1);
 				used = true;
-				vec3_arr_push(&outside, b);
+				outside++;
 			}
 			if (is_in(c, i)) {
 				vec3_arr_push(&inside, c);
 			} else {
 				vec3_arr_push(&inside, used ? &out2 : &out1);
 				used = true;
-				vec3_arr_push(&outside, c);
+				outside++;
 			}
-			if (outside.size == 1) {
-				// cutting a corner off, break into 2 triangles
+			if (outside == 1) {
+				// Cutting a corner off, break into 2 triangles
 				vec3_arr_push(clipped, &inside.data[0]);
 				vec3_arr_push(clipped, &inside.data[1]);
 				vec3_arr_push(clipped, &inside.data[2]);
@@ -300,7 +305,7 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 				vec3_arr_push(clipped, &out2);
 				vec3_arr_push(clipped, &inside.data[0]);
 			} else {
-				// cutting a side off, still only 1 triangle
+				// Ctting a side off, still only 1 triangle
 				vec3_arr_push(clipped, &inside.data[0]);
 				vec3_arr_push(clipped, &inside.data[1]);
 				vec3_arr_push(clipped, &inside.data[2]);
@@ -313,12 +318,11 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 	vec3_arr_free(tmp);
 	free(tmp);
 	vec3_arr_free(&inside);
-	vec3_arr_free(&outside);
 	return clipped;
 }
 
 void *renderLoop(void *args) {
-	(void)args;
+	(void)args; // unused
 	while (true) {
 		// Wait for paint to finish
 		pthread_mutex_lock(&paint_mutex);
@@ -335,60 +339,99 @@ void *renderLoop(void *args) {
 			mat4_mul_vec(&v, t2, &v);
 			memcpy(&transVerts[i], &v, sizeof(vec3));
 		}
-		// Collect the verticies into triangles
-		vec3 **triVerticies = malloc(numTriangles * 3 * sizeof(vec3 *));
-		for (int i = 0; i < numTriangles; i++) {
-			triVerticies[i * 3 + 0] = transVerts + triangles[i].x;
-			triVerticies[i * 3 + 1] = transVerts + triangles[i].y;
-			triVerticies[i * 3 + 2] = transVerts + triangles[i].z;
+		if (raytrace) {
+			// Cast a ray for each pixel
+			ray r = {{0, 0, proj[2][3]}, {0, 0, 1}};
+			for (int x = 0; x < WIDTH; x++) {
+				r.direction.x = (x / (WIDTH / 2.0f) - 1) / proj[0][0];
+				for (int y = 0; y < HEIGHT; y++) {
+					if (x == 200 && y == 180)
+						printf("test");
+					r.direction.y = (y / (HEIGHT / 2.0f) - 1) / proj[1][1];
+					// Find the closest intersection
+					float closest = INFINITY;
+					vec3 closestPoint;
+					for (int i = 0; i < numTriangles; i++) {
+						vec3 *a = transVerts + triangles[i].x;
+						vec3 *b = transVerts + triangles[i].y;
+						vec3 *c = transVerts + triangles[i].z;
+						plane p;
+						vec3 ab, ac;
+						vec3_sub(&ab, b, a);
+						vec3_sub(&ac, c, a);
+						vec3_cross((vec3 *)&p, &ab, &ac);
+						vec3_normalize((vec3 *)&p, (vec3 *)&p);
+						p.w = -vec3_dot((vec3 *)&p, a);
+						vec3 point;
+						if (intersect_plane_line(&point, &p, &r)) {
+							if (point_in_triangle(&point, a, b, c)) {
+								vec3_sub(&point, &point, &r.origin);
+								float dist = vec3_length(&point);
+								if (dist < closest) {
+									closest = dist;
+									closestPoint = point;
+								}
+							}
+						}
+					}
+					if (closest != INFINITY) {
+						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0xeeeeee;
+					} else {
+						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0x111111;
+					}
+				}
+			}
+		} else {
+			// Collect the verticies into triangles
+			vec3 **triVerticies = malloc(numTriangles * 3 * sizeof(vec3 *));
+			for (int i = 0; i < numTriangles; i++) {
+				triVerticies[i * 3 + 0] = transVerts + triangles[i].x;
+				triVerticies[i * 3 + 1] = transVerts + triangles[i].y;
+				triVerticies[i * 3 + 2] = transVerts + triangles[i].z;
+			}
+			// Clip the triangles
+			vec3_arr *clipped = clip(triVerticies, numTriangles * 3);
+			// Project the verticies
+			vec3 *screenVerts = malloc(clipped->size * sizeof(vec3));
+			for (int i = 0; i < clipped->size; i++) {
+				vec4 a, b;
+				vec3_tovec4(&a, &clipped->data[i]);
+				mat4_mul_vec(&b, proj, &a);
+				// Make it to screen space
+				to_screen(&screenVerts[i], (vec3 *)&b);
+			}
+			// Draw the triangles
+			memset(z_buffer, 0x7f, WIDTH * HEIGHT * sizeof(int));
+			memset(frame_buffer, 0, WIDTH * HEIGHT * sizeof(uint32_t));
+			for (int i = 0; i < clipped->size; i += 3) {
+				vec3 *a = &clipped->data[i + 0];
+				vec3 *b = &clipped->data[i + 1];
+				vec3 *c = &clipped->data[i + 2];
+				// get the luminance
+				vec3 cent, norm, ab, ac, normcent;
+				centroid(&cent, a, b, c);
+				vec3_normalize(&normcent, &cent);
+				vec3_sub(&ab, b, a);
+				vec3_sub(&ac, c, a);
+				vec3_cross(&norm, &ab, &ac);
+				vec3_normalize(&norm, &norm);
+				vec3_sub(&cent, &cent, &light);
+				if (vec3_dot(&normcent, &norm) >= 0)
+					continue;
+				float lum = -vec3_dot(&normcent, &norm) * 255;
+				// float lum = 255;
+				fillTriangle(lum, &screenVerts[i], &screenVerts[i + 1], &screenVerts[i + 2]);
+			}
+			memcpy(middle_buffer, frame_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
+			free(screenVerts);
+			free(triVerticies);
+			vec3_arr_free(clipped);
+			free(clipped);
 		}
-		// Clip the triangles
-		vec3_arr *clipped = clip(triVerticies, numTriangles * 3);
-		// Project the verticies
-		vec3 *screenVerts = malloc(clipped->size * sizeof(vec3));
-		for (int i = 0; i < clipped->size; i++) {
-			vec4 a, b;
-			vec3_tovec4(&a, &clipped->data[i]);
-			mat4_mul_vec(&b, proj, &a);
-			// Make it to screen space
-			to_screen(&screenVerts[i], (vec3 *)&b);
-		}
-		// Draw the triangles
-		memset(z_buffer, 0x7f, WIDTH * HEIGHT * sizeof(int));
-		memset(frame_buffer, 0, WIDTH * HEIGHT * sizeof(uint32_t));
-		for (int i = 0; i < clipped->size; i += 3) {
-			vec3 *a = &clipped->data[i + 0];
-			vec3 *b = &clipped->data[i + 1];
-			vec3 *c = &clipped->data[i + 2];
-			// get the luminance
-			vec3 cent, norm, ab, ac, normcent;
-			centroid(&cent, a, b, c);
-			vec3_normalize(&normcent, &cent);
-			vec3_sub(&ab, b, a);
-			vec3_sub(&ac, c, a);
-			vec3_cross(&norm, &ab, &ac);
-			vec3_normalize(&norm, &norm);
-			vec3_sub(&cent, &cent, &light);
-			if (vec3_dot(&normcent, &norm) >= 0)
-				continue;
-			float lum = -vec3_dot(&normcent, &norm) * 255;
-			// float lum = 255;
-			fillTriangle(lum, &screenVerts[i], &screenVerts[i + 1], &screenVerts[i + 2]);
-		}
-		memcpy(middle_buffer, frame_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
-		free(screenVerts);
-		free(triVerticies);
-		vec3_arr_free(clipped);
-		free(clipped);
 	}
 }
 
 int main() {
-	/// TODO: Fix clipping planes
-	// top = (plane){0, -tanf(FOV / 2 * M_PI / 180), FAR / (FAR - NEAR), 0};
-	// bottom = (plane){0, tanf(FOV / 2 * M_PI / 180), FAR / (FAR - NEAR), 0};
-	// left = (plane){ASPECT * tanf(FOV / 2 * M_PI / 180), 0, FAR / (FAR - NEAR), 0};
-	// right = (plane){-ASPECT * tanf(FOV / 2 * M_PI / 180), 0, FAR / (FAR - NEAR), 0};
 	top = (plane){0, -tanf(FOV / 2 * M_PI / 180), FAR / (FAR - NEAR), -(FAR * NEAR) / (FAR - NEAR)};
 	bottom = (plane){0, tanf(FOV / 2 * M_PI / 180), FAR / (FAR - NEAR), -(FAR * NEAR) / (FAR - NEAR)};
 	left = (plane){ASPECT * tanf(FOV / 2 * M_PI / 180), 0, FAR / (FAR - NEAR), -(FAR * NEAR) / (FAR - NEAR)};
@@ -426,7 +469,10 @@ int main() {
 					camera.y -= 0.1;
 				else if (e.key.keysym.sym == SDLK_e)
 					camera.y += 0.1;
+				else if (e.key.keysym.sym == SDLK_r)
+					raytrace = !raytrace;
 		}
+		printf("%f %f %f\n", camera.x, camera.y, camera.z);
 		// Update screen
 		long long time = SDL_GetTicks();
 		SDL_LockSurface(s);

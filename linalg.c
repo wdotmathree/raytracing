@@ -98,16 +98,8 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	vec3_normalize(&pb, &pb);
 	vec3_normalize(&pc, &pc);
 	// Check if point is on the edge of the triangle
-	// Get the vector for each edge
-	vec3 ab, bc, ca;
-	vec3_sub(&ab, b, a);
-	vec3_sub(&bc, c, b);
-	vec3_sub(&ca, a, c);
-	vec3_normalize(&ab, &ab);
-	vec3_normalize(&bc, &bc);
-	vec3_normalize(&ca, &ca);
 	// Check if point is on edge AB
-	// P->A and P->B should be opposite each other (dot product should be -1)
+	// P->A and P->B opposite each other (dot product = -1)
 	if (__builtin_expect(vec3_dot(&pa, &pb) < -1 + LINALG_EPSILON, false))
 		return true;
 	// Check if point is on edge BC
@@ -118,7 +110,9 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 		return true;
 	// Check if point is coplanar with triangle
 	// Get normal vector for triangle plane
-	vec3 normal;
+	vec3 ab, bc, normal;
+	vec3_sub(&ab, b, a);
+	vec3_sub(&bc, c, b);
 	vec3_cross(&normal, &ab, &bc);
 	vec3_normalize(&normal, &normal);
 	// If point is coplanar, dot product of normal and point vectors will be 0

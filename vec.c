@@ -1,6 +1,8 @@
 #include "vec.h"
 
-float vec3_dot(const vec3 *a, const vec3 *b) { return a->x * b->x + a->y * b->y + a->z * b->z; }
+float vec3_dot(const vec3 *a, const vec3 *b) {
+	return a->x * b->x + a->y * b->y + a->z * b->z;
+}
 
 void vec3_cross(vec3 *out, const vec3 *a, const vec3 *b) {
 	out->x = a->y * b->z - a->z * b->y;
@@ -8,7 +10,9 @@ void vec3_cross(vec3 *out, const vec3 *a, const vec3 *b) {
 	out->z = a->x * b->y - a->y * b->x;
 }
 
-float vec3_length(const vec3 *a) { return sqrtf(vec3_dot(a, a)); }
+float vec3_length(const vec3 *a) {
+	return sqrtf(vec3_dot(a, a));
+}
 
 void vec3_normalize(vec3 *out, const vec3 *a) {
 	float len = vec3_length(a);
@@ -45,7 +49,7 @@ void vec3_scale(vec3 *out, const vec3 *a, const float s) {
 
 void vec3_negate(vec3 *out, const vec3 *a) {
 	__m128 a1 = _mm_load_ps((float *)a);
-	a1 = _mm_sub_ps(_mm_setzero_ps(), a1);
+	a1 = _mm_xor_ps((__m128)_mm_set1_epi32(0x80000000), a1);
 	_mm_store_ps((float *)out, a1);
 }
 
