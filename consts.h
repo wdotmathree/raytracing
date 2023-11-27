@@ -8,6 +8,12 @@
 #include <string.h>
 #include <x86intrin.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#define LINALG_EPSILON 0.001f
+
 static const int WIDTH = 1920;
 static const int HEIGHT = 1080;
 

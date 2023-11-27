@@ -6,10 +6,6 @@
 #include "mat.h"
 #include "transform.h"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 void translate(mat4 out, float x, float y, float z);
 
 void rotateX(mat4 out, float x);

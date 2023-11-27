@@ -132,6 +132,31 @@ void centroid(vec3 *centroid, vec3 *a, vec3 *b, vec3 *c) {
 	centroid->z = (a->z + b->z + c->z) / 3;
 }
 
+void sort(vec3i *arr, int n) {
+	if (n < 2)
+		return;
+	float pivot = verticies[arr[n / 2].x].z + verticies[arr[n / 2].y].z + verticies[arr[n / 2].z].z;
+	int l = 0;
+	int r = n - 1;
+	while (l <= r) {
+		if (verticies[arr[l].x].z + verticies[arr[l].y].z + verticies[arr[l].z].z < pivot) {
+			l++;
+			continue;
+		}
+		if (verticies[arr[r].x].z + verticies[arr[r].y].z + verticies[arr[r].z].z > pivot) {
+			r--;
+			continue;
+		}
+		vec3i tmp = arr[l];
+		arr[l] = arr[r];
+		arr[r] = tmp;
+		l++;
+		r--;
+	}
+	sort(arr, r + 1);
+	sort(arr + l, n - l);
+}
+
 int parseFile() {
 	// Read in the data
 	FILE *fp = fopen("thing.obj", "r");
@@ -199,6 +224,10 @@ int parseFile() {
 	// }
 	munmap(map, ftell(fp) + 1);
 	fclose(fp);
+
+	// Sort the triangles
+	sort(triangles, numTriangles);
+
 	return 0;
 }
 
@@ -248,7 +277,7 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 		vec3_arr_clear(clipped);
 		for (int j = 0; j < tmp->size; j += 3) {
 			vec3_arr_clear(&inside);
-			vec3 *a = &tmp->data[j];
+			vec3 *a = &tmp->data[j + 0];
 			vec3 *b = &tmp->data[j + 1];
 			vec3 *c = &tmp->data[j + 2];
 			// Check if the triangle is inside the plane
@@ -272,7 +301,8 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 			/// TODO: Fix this part
 			bool used = false; // If we have used out1 yet
 			int outside = 0; // How many verticies are outside the visible area
-			// Inside are the points A,B,C (in order) and their replacements (out1, out2) if they are outside
+			// Inside are the points A,B,C (in order) and their replacements (out1, out2) if they
+			// are outside
 			if (is_in(a, i)) {
 				vec3_arr_push(&inside, a);
 			} else {
@@ -341,16 +371,14 @@ void *renderLoop(void *args) {
 		}
 		if (raytrace) {
 			// Cast a ray for each pixel
-			ray r = {{0, 0, proj[2][3]}, {0, 0, 1}};
+			ray r = {{0, 0, 0}, {0, 0, 1}};
 			for (int x = 0; x < WIDTH; x++) {
 				r.direction.x = (x / (WIDTH / 2.0f) - 1) / proj[0][0];
 				for (int y = 0; y < HEIGHT; y++) {
-					if (x == 200 && y == 180)
-						printf("test");
 					r.direction.y = (y / (HEIGHT / 2.0f) - 1) / proj[1][1];
 					// Find the closest intersection
-					float closest = INFINITY;
-					vec3 closestPoint;
+					vec3 hit;
+					bool found = false;
 					for (int i = 0; i < numTriangles; i++) {
 						vec3 *a = transVerts + triangles[i].x;
 						vec3 *b = transVerts + triangles[i].y;
@@ -364,17 +392,18 @@ void *renderLoop(void *args) {
 						p.w = -vec3_dot((vec3 *)&p, a);
 						vec3 point;
 						if (intersect_plane_line(&point, &p, &r)) {
+							if (point.z > FAR || point.z < NEAR)
+								continue;
 							if (point_in_triangle(&point, a, b, c)) {
 								vec3_sub(&point, &point, &r.origin);
 								float dist = vec3_length(&point);
-								if (dist < closest) {
-									closest = dist;
-									closestPoint = point;
-								}
+								hit = point;
+								found = true;
+								break;
 							}
 						}
 					}
-					if (closest != INFINITY) {
+					if (found) {
 						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0xeeeeee;
 					} else {
 						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0x111111;

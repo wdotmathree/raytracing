@@ -2,8 +2,6 @@
 #include "mat.h"
 #include "vec.h"
 
-#define LINALG_EPSILON 0.001f
-
 typedef struct ray {
 	vec3 origin;
 	vec3 direction;
