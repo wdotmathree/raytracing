@@ -1,8 +1,8 @@
-#include "linalg.h"
+#include "linalg.hpp"
 
-bool intersect_plane_plane(ray *out, const plane *a, const plane *b) {
+special bool intersect_plane_plane(ray *out, const plane *a, const plane *b) {
 	// Cross product of normals is direction
-	vec3_cross(&out->direction, (const vec3 *)a, (const vec3 *)b);
+	vec3_cross(&out->direction, (const float3 *)a, (const float3 *)b);
 	// Solve for origin
 	// Setup system of equations
 	mat3 t1 = {{a->x, a->y, a->z}, {b->x, b->y, b->z}, {out->direction.x, out->direction.y, out->direction.z}};
@@ -12,7 +12,7 @@ bool intersect_plane_plane(ray *out, const plane *a, const plane *b) {
 	if (__builtin_expect(mat3_invert(t2, t1) == 0, false))
 		return false;
 	// Results are in last column (ax + by + cz = d)
-	vec3 t3;
+	float3 t3;
 	t3.x = -a->w;
 	t3.y = -b->w;
 	t3.z = 0;
@@ -20,7 +20,7 @@ bool intersect_plane_plane(ray *out, const plane *a, const plane *b) {
 	return true;
 }
 
-bool intersect_plane_line(vec3 *out, const plane *p, const ray *l) {
+special bool intersect_plane_line(float3 *out, const plane *p, const ray *l) {
 	// Put line equation into plane equation and solve for t
 	// A1(A2t + A3) + B1(B2t + B3) + C1(C2t + C3) + D1 = 0
 	// (A1A2 + B1B2 + C1C2)t + (A1A3 + B1B3 + C1C3 + D1) = 0
@@ -37,7 +37,7 @@ bool intersect_plane_line(vec3 *out, const plane *p, const ray *l) {
 	return true;
 }
 
-bool intersect_line_line(vec3 *out, const ray *a, const ray *b) {
+special bool intersect_line_line(float3 *out, const ray *a, const ray *b) {
 	// System of equations
 	// x = A1t + A2
 	// y = B1t + B2
@@ -53,7 +53,7 @@ bool intersect_line_line(vec3 *out, const ray *a, const ray *b) {
 		{a->direction.y, -b->direction.y},
 	};
 	// Setup vector
-	vec2 rhs = {
+	float2 rhs = {
 		b->origin.x - a->origin.x,
 		b->origin.y - a->origin.y,
 	};
@@ -72,7 +72,7 @@ bool intersect_line_line(vec3 *out, const ray *a, const ray *b) {
 		}
 	}
 	// Multiply
-	vec2 vars;
+	float2 vars;
 	mat2_mul_vec(&vars, lhs_inv, &rhs);
 	// Calculate result (vars.x = t, vars.y = u)
 	out->x = a->origin.x + vars.x * a->direction.x;
@@ -81,9 +81,9 @@ bool intersect_line_line(vec3 *out, const ray *a, const ray *b) {
 	return true;
 }
 
-bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const vec3 *c) {
+special bool point_in_triangle(const float3 *point, const float3 *a, const float3 *b, const float3 *c) {
 	// Get vectors from point to each vertex
-	vec3 pa, pb, pc;
+	float3 pa, pb, pc;
 	vec3_sub(&pa, a, point);
 	vec3_sub(&pb, b, point);
 	vec3_sub(&pc, c, point);
@@ -110,7 +110,7 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 		return true;
 	// Check if point is coplanar with triangle
 	// Get normal vector for triangle plane
-	vec3 ab, bc, normal;
+	float3 ab, bc, normal;
 	vec3_sub(&ab, b, a);
 	vec3_sub(&bc, c, b);
 	vec3_cross(&normal, &ab, &bc);
@@ -120,7 +120,7 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	if (__builtin_expect(fabsf(vec3_dot(&normal, &pa)) > LINALG_EPSILON, false))
 		return false;
 	// Get cross products (will be normal to the plane, if all are pointing the same direction then the point is inside)
-	vec3 c1, c2, c3;
+	float3 c1, c2, c3;
 	vec3_cross(&c1, &pa, &pb);
 	vec3_cross(&c2, &pb, &pc);
 	vec3_cross(&c3, &pc, &pa);
@@ -140,20 +140,20 @@ bool point_in_triangle(const vec3 *point, const vec3 *a, const vec3 *b, const ve
 	return fabsf(c1.z - c3.z) < LINALG_EPSILON;
 }
 
-int intersect_plane_triangle(vec3 *out1, vec3 *out2, const plane *p, const vec3 *a, const vec3 *b, const vec3 *c) {
+special int intersect_plane_triangle(float3 *out1, float3 *out2, const plane *p, const float3 *a, const float3 *b, const float3 *c) {
 	// Get the equation for the plane of the triangle
 	plane tri;
-	vec3 ab, ac;
+	float3 ab, ac;
 	vec3_sub(&ab, b, a);
 	vec3_sub(&ac, c, a);
-	vec3_cross((vec3 *)&tri, &ab, &ac);
+	vec3_cross((float3 *)&tri, &ab, &ac);
 	tri.w = -(tri.x * a->x + tri.y * a->y + tri.z * a->z);
 	// Get the line of intersection between the two planes
 	ray l_int, l_edge;
 	if (!intersect_plane_plane(&l_int, p, &tri))
 		return 0;
 	// Test each edge of the triangle
-	vec3 p_int;
+	float3 p_int;
 	int num = 0; // Number of intersections
 	// Edge AB
 	vec3_sub(&l_edge.direction, b, a);

@@ -1,34 +1,37 @@
-#include "arr.h"
-#include "consts.h"
-#include "linalg.h"
-#include "mat.h"
-#include "transform.h"
-#include "vec.h"
+#include "consts.hpp"
+#include "linalg.hpp"
+#include "mat.hpp"
+#include "rt.hpp"
+#include "transform.hpp"
+#include "vec.hpp"
+
 #include <SDL.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <time.h>
 
+#include <vector>
+
 const int FPS = 15;
-const vec3 light = {0, 0, -10};
-vec3 camera = {2, 1, -5};
-vec2 look = {0, 0};
+const float3 light = {0, 0, -10};
+float3 camera = {2, 1, -5};
+float2 look = {0, 0};
 
 bool raytrace = false;
 
 int numVerticies;
 int numTriangles;
-vec3 *verticies;
-vec3 *transVerts;
-vec3i *triangles;
+float3 *verticies;
+float3 *transVerts;
+uint3 *triangles;
 
 uint32_t *frame_buffer;
 uint32_t *middle_buffer;
 float *z_buffer;
 
-void fillTriangle(int lum, vec3 *a, vec3 *b, vec3 *c) {
-	vec3 left, mid, right;
+void fillTriangle(int lum, float3 *a, float3 *b, float3 *c) {
+	float3 left, mid, right;
 	if (a->x < b->x) {
 		if (a->x < c->x) {
 			left = *a;
@@ -126,13 +129,13 @@ void fillTriangle(int lum, vec3 *a, vec3 *b, vec3 *c) {
 	}
 }
 
-void centroid(vec3 *centroid, vec3 *a, vec3 *b, vec3 *c) {
+void centroid(float3 *centroid, float3 *a, float3 *b, float3 *c) {
 	centroid->x = (a->x + b->x + c->x) / 3;
 	centroid->y = (a->y + b->y + c->y) / 3;
 	centroid->z = (a->z + b->z + c->z) / 3;
 }
 
-void sort(vec3i *arr, int n) {
+void sort(uint3 *arr, int n) {
 	if (n < 2)
 		return;
 	float pivot = verticies[arr[n / 2].x].z + verticies[arr[n / 2].y].z + verticies[arr[n / 2].z].z;
@@ -147,7 +150,7 @@ void sort(vec3i *arr, int n) {
 			r--;
 			continue;
 		}
-		vec3i tmp = arr[l];
+		uint3 tmp = arr[l];
 		arr[l] = arr[r];
 		arr[r] = tmp;
 		l++;
@@ -165,7 +168,7 @@ int parseFile() {
 		return 1;
 	}
 	fseek(fp, 0, SEEK_END);
-	char *map = mmap(NULL, ftell(fp) + 1, PROT_READ, MAP_PRIVATE, fp->_fileno, 0);
+	char *map = (char *)mmap(NULL, ftell(fp) + 1, PROT_READ, MAP_PRIVATE, fp->_fileno, 0);
 	char *line = map;
 	while (line) {
 		if (line[0] == 'v' && line[1] == ' ') {
@@ -177,9 +180,9 @@ int parseFile() {
 		if (line)
 			line++;
 	}
-	verticies = malloc(numVerticies * sizeof(vec3));
-	triangles = malloc(numTriangles * sizeof(vec3i));
-	transVerts = malloc(numVerticies * sizeof(vec3));
+	verticies = (float3 *)malloc(numVerticies * sizeof(float3));
+	triangles = (uint3 *)malloc(numTriangles * sizeof(uint3));
+	transVerts = (float3 *)malloc(numVerticies * sizeof(float3));
 	line = map;
 	int v = 0;
 	int t = 0;
@@ -191,7 +194,7 @@ int parseFile() {
 	// float maxz = 0;
 	while (line) {
 		if (line[0] == 'v' && line[1] == ' ') {
-			vec3 *vert = verticies + v;
+			float3 *vert = verticies + v;
 			sscanf(line, "v %f %f %f", &vert->x, &vert->y, &vert->z);
 			// minx = fminf(minx, vert->x);
 			// miny = fminf(miny, vert->y);
@@ -201,7 +204,7 @@ int parseFile() {
 			// maxz = fmaxf(maxz, vert->z);
 			v++;
 		} else if (line[0] == 'f' && line[1] == ' ') {
-			vec3i *tri = triangles + t;
+			uint3 *tri = triangles + t;
 			sscanf(line, "f %d %d %d", &tri->x, &tri->y, &tri->z);
 			tri->x--;
 			tri->y--;
@@ -214,7 +217,7 @@ int parseFile() {
 	}
 	// float scale = fmaxf(fmaxf(maxx - minx, maxy - miny), maxz - minz) / 2;
 	// for (int i = 0; i < numVerticies; i++) {
-	// 	vec3 *vert = verticies + i;
+	// 	float3 *vert = verticies + i;
 	// 	vert->x -= (maxx + minx) / 2;
 	// 	vert->y -= (maxy + miny) / 2;
 	// 	vert->z -= (maxz + minz) / 2;
@@ -246,7 +249,7 @@ static plane top, bottom, left, right, near, far;
 static plane *planes[] = {&top, &bottom, &left, &right, &near, &far};
 
 // top, bottom, left, right, near, far
-bool is_in(vec3 *v, int selector) {
+bool is_in(float3 *v, int selector) {
 	plane *p = planes[selector];
 	switch (selector) {
 	case 0:
@@ -263,39 +266,39 @@ bool is_in(vec3 *v, int selector) {
 	exit(1);
 }
 
-vec3_arr *clip(vec3 **verts, int numVerts) {
+std::vector<float3> *clip(float3 **verts, int numVerts) {
 	// Prepare arrays
-	vec3_arr *clipped = vec3_arr_new();
-	vec3_arr *tmp = vec3_arr_new();
-	vec3_arr inside = vec3_arr_init();
-	vec3_arr_reserve(clipped, numVerts * 2);
-	vec3_arr_reserve(tmp, numVerts * 2);
+	std::vector<float3> *clipped = new std::vector<float3>();
+	std::vector<float3> *tmp = new std::vector<float3>();
+	std::vector<float3> inside = std::vector<float3>();
+	clipped->reserve(numVerts * 2);
+	tmp->reserve(numVerts * 2);
 	for (int i = 0; i < numVerts; i++)
-		vec3_arr_push(tmp, verts[i]);
+		tmp->push_back(*verts[i]);
 	// Clip against each plane
 	for (int i = 0; i < 6; i++) {
-		vec3_arr_clear(clipped);
-		for (int j = 0; j < tmp->size; j += 3) {
-			vec3_arr_clear(&inside);
-			vec3 *a = &tmp->data[j + 0];
-			vec3 *b = &tmp->data[j + 1];
-			vec3 *c = &tmp->data[j + 2];
+		clipped->clear();
+		for (int j = 0; j < tmp->size(); j += 3) {
+			inside.clear();
+			float3 *a = &(*tmp)[j + 0];
+			float3 *b = &(*tmp)[j + 1];
+			float3 *c = &(*tmp)[j + 2];
 			// Check if the triangle is inside the plane
 			if (is_in(a, i) && is_in(b, i) && is_in(c, i)) {
-				vec3_arr_push(clipped, a);
-				vec3_arr_push(clipped, b);
-				vec3_arr_push(clipped, c);
+				clipped->push_back(*a);
+				clipped->push_back(*b);
+				clipped->push_back(*c);
 				continue;
 			}
 			// Check if the triangle is outside the plane
 			if (!is_in(a, i) && !is_in(b, i) && !is_in(c, i))
 				continue;
 			// Check if the triangle intersects the plane
-			vec3 out1, out2;
+			float3 out1, out2;
 			if (intersect_plane_triangle(&out1, &out2, planes[i], a, b, c) < 2) {
-				vec3_arr_push(clipped, a);
-				vec3_arr_push(clipped, b);
-				vec3_arr_push(clipped, c);
+				clipped->push_back(*a);
+				clipped->push_back(*b);
+				clipped->push_back(*c);
 				continue;
 			}
 			/// TODO: Fix this part
@@ -304,50 +307,47 @@ vec3_arr *clip(vec3 **verts, int numVerts) {
 			// Inside are the points A,B,C (in order) and their replacements (out1, out2) if they
 			// are outside
 			if (is_in(a, i)) {
-				vec3_arr_push(&inside, a);
+				inside.push_back(*a);
 			} else {
 				// Use out1 as a replacement for A
-				vec3_arr_push(&inside, &out1);
+				inside.push_back(out1);
 				used = true;
 				outside++;
 			}
 			if (is_in(b, i)) {
-				vec3_arr_push(&inside, b);
+				inside.push_back(*b);
 			} else {
 				// Use out2 if we have already used out1, otherwise use out1
-				vec3_arr_push(&inside, used ? &out2 : &out1);
+				inside.push_back(used ? out2 : out1);
 				used = true;
 				outside++;
 			}
 			if (is_in(c, i)) {
-				vec3_arr_push(&inside, c);
+				inside.push_back(*c);
 			} else {
-				vec3_arr_push(&inside, used ? &out2 : &out1);
+				inside.push_back(used ? out2 : out1);
 				used = true;
 				outside++;
 			}
 			if (outside == 1) {
 				// Cutting a corner off, break into 2 triangles
-				vec3_arr_push(clipped, &inside.data[0]);
-				vec3_arr_push(clipped, &inside.data[1]);
-				vec3_arr_push(clipped, &inside.data[2]);
-				vec3_arr_push(clipped, &inside.data[2]);
-				vec3_arr_push(clipped, &out2);
-				vec3_arr_push(clipped, &inside.data[0]);
+				clipped->push_back(inside[0]);
+				clipped->push_back(inside[1]);
+				clipped->push_back(inside[2]);
+				clipped->push_back(inside[2]);
+				clipped->push_back(out2);
+				clipped->push_back(inside[0]);
 			} else {
 				// Ctting a side off, still only 1 triangle
-				vec3_arr_push(clipped, &inside.data[0]);
-				vec3_arr_push(clipped, &inside.data[1]);
-				vec3_arr_push(clipped, &inside.data[2]);
+				clipped->push_back(inside[0]);
+				clipped->push_back(inside[1]);
+				clipped->push_back(inside[2]);
 			}
 		}
-		vec3_arr *t = tmp;
-		tmp = clipped;
-		clipped = t;
+		// Swap the buffers
+		std::swap(clipped, tmp);
 	}
-	vec3_arr_free(tmp);
-	free(tmp);
-	vec3_arr_free(&inside);
+	delete tmp;
 	return clipped;
 }
 
@@ -364,80 +364,41 @@ void *renderLoop(void *args) {
 		translate(t1, -camera.x, -camera.y, -camera.z);
 		mat4_mul(t2, rot, t1);
 		for (int i = 0; i < numVerticies; i++) {
-			vec4 v;
+			float4 v;
 			vec3_tovec4(&v, &verticies[i]);
 			mat4_mul_vec(&v, t2, &v);
-			memcpy(&transVerts[i], &v, sizeof(vec3));
+			memcpy(&transVerts[i], &v, sizeof(float3));
 		}
 		if (raytrace) {
-			// Cast a ray for each pixel
-			ray r = {{0, 0, 0}, {0, 0, 1}};
-			for (int x = 0; x < WIDTH; x++) {
-				r.direction.x = (x / (WIDTH / 2.0f) - 1) / proj[0][0];
-				for (int y = 0; y < HEIGHT; y++) {
-					r.direction.y = (y / (HEIGHT / 2.0f) - 1) / proj[1][1];
-					// Find the closest intersection
-					vec3 hit;
-					bool found = false;
-					for (int i = 0; i < numTriangles; i++) {
-						vec3 *a = transVerts + triangles[i].x;
-						vec3 *b = transVerts + triangles[i].y;
-						vec3 *c = transVerts + triangles[i].z;
-						plane p;
-						vec3 ab, ac;
-						vec3_sub(&ab, b, a);
-						vec3_sub(&ac, c, a);
-						vec3_cross((vec3 *)&p, &ab, &ac);
-						vec3_normalize((vec3 *)&p, (vec3 *)&p);
-						p.w = -vec3_dot((vec3 *)&p, a);
-						vec3 point;
-						if (intersect_plane_line(&point, &p, &r)) {
-							if (point.z > FAR || point.z < NEAR)
-								continue;
-							if (point_in_triangle(&point, a, b, c)) {
-								vec3_sub(&point, &point, &r.origin);
-								float dist = vec3_length(&point);
-								hit = point;
-								found = true;
-								break;
-							}
-						}
-					}
-					if (found) {
-						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0xeeeeee;
-					} else {
-						middle_buffer[(HEIGHT - 1 - y) * WIDTH + x] = 0x111111;
-					}
-				}
-			}
+			raytrace_render(middle_buffer, transVerts, triangles, proj, numTriangles);
 		} else {
 			// Collect the verticies into triangles
-			vec3 **triVerticies = malloc(numTriangles * 3 * sizeof(vec3 *));
+			float3 **triVerticies = (float3 **)malloc(numTriangles * 3 * sizeof(float3 *));
 			for (int i = 0; i < numTriangles; i++) {
 				triVerticies[i * 3 + 0] = transVerts + triangles[i].x;
 				triVerticies[i * 3 + 1] = transVerts + triangles[i].y;
 				triVerticies[i * 3 + 2] = transVerts + triangles[i].z;
 			}
 			// Clip the triangles
-			vec3_arr *clipped = clip(triVerticies, numTriangles * 3);
+			std::vector<float3> *clipped = clip(triVerticies, numTriangles * 3);
 			// Project the verticies
-			vec3 *screenVerts = malloc(clipped->size * sizeof(vec3));
-			for (int i = 0; i < clipped->size; i++) {
-				vec4 a, b;
-				vec3_tovec4(&a, &clipped->data[i]);
+			float3 *screenVerts = (float3 *)malloc(clipped->size() * sizeof(float3));
+			for (int i = 0; i < clipped->size(); i++) {
+				float4 a, b;
+				vec3_tovec4(&a, &(*clipped)[i]);
 				mat4_mul_vec(&b, proj, &a);
 				// Make it to screen space
-				to_screen(&screenVerts[i], (vec3 *)&b);
+				to_screen(&screenVerts[i], (float3 *)&b);
 			}
 			// Draw the triangles
 			memset(z_buffer, 0x7f, WIDTH * HEIGHT * sizeof(int));
 			memset(frame_buffer, 0, WIDTH * HEIGHT * sizeof(uint32_t));
-			for (int i = 0; i < clipped->size; i += 3) {
-				vec3 *a = &clipped->data[i + 0];
-				vec3 *b = &clipped->data[i + 1];
-				vec3 *c = &clipped->data[i + 2];
+			for (int i = 0; i < clipped->size(); i += 3) {
+				float3 *a = &(*clipped)[i + 0];
+				float3 *b = &(*clipped)[i + 1];
+				float3 *c = &(*clipped)[i + 2];
 				// get the luminance
-				vec3 cent, norm, ab, ac, normcent;
+				float3 cent, norm, ab, ac, normcent;
 				centroid(&cent, a, b, c);
 				vec3_normalize(&normcent, &cent);
 				vec3_sub(&ab, b, a);
@@ -454,8 +415,7 @@ void *renderLoop(void *args) {
 			memcpy(middle_buffer, frame_buffer, WIDTH * HEIGHT * sizeof(uint32_t));
 			free(screenVerts);
 			free(triVerticies);
-			vec3_arr_free(clipped);
-			free(clipped);
+			delete clipped;
 		}
 	}
 }
@@ -472,9 +432,9 @@ int main() {
 		return 1;
 	w = SDL_CreateWindow("Thing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_BORDERLESS | SDL_WINDOW_FULLSCREEN);
 	s = SDL_GetWindowSurface(w);
-	frame_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
-	z_buffer = calloc(WIDTH * HEIGHT, sizeof(float));
-	middle_buffer = calloc(WIDTH * HEIGHT, sizeof(uint32_t));
+	frame_buffer = (uint32_t *)calloc(WIDTH * HEIGHT, sizeof(uint32_t));
+	z_buffer = (float *)calloc(WIDTH * HEIGHT, sizeof(float));
+	middle_buffer = (uint32_t *)calloc(WIDTH * HEIGHT, sizeof(uint32_t));
 	pthread_mutex_unlock(&paint_mutex);
 	pthread_create(&t, NULL, renderLoop, NULL);
 	while (true) {

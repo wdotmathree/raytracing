@@ -1,10 +1,8 @@
-CC=gcc
-CFLAGS=-fsanitize=address,undefined -Wall -Wextra -fno-trapping-math -fno-math-errno -fno-signed-zeros -march=native -falign-functions=16 -lm -lpthread -g $(shell sdl2-config --cflags --libs)
-SRCS=$(wildcard *.c)
+CC=nvcc
+CFLAGS=-rdc=true -lm -lpthread -g $(shell sdl2-config --cflags --libs)
+SRCS=$(wildcard *.cu)
 HDRS=$(wildcard *.h)
-OBJS=$(SRCS:.c=.o)
-CUS=$(wildcard *.cu)
-CUOBJS=$(CUS:.cu=.o)
+OBJS=$(SRCS:.cu=.o)
 
 .PHONY: debug release test clean
 
@@ -14,14 +12,11 @@ release: CFLAGS += -O3
 release: a.out
 	# strip -s a.out
 
-a.out: $(OBJS) $(CUOBJS)
-	$(CC) $(OBJS) $(CUOBJS) $(CFLAGS)
-
-%.o: %.c $(HDRS) Makefile
-	$(CC) -c $< -o $@ $(CFLAGS)
+a.out: $(OBJS)
+	$(CC) $(OBJS) $(CFLAGS)
 
 %.o: %.cu $(HDRS) Makefile
-	# nvcc -c $< -o $@
+	nvcc -c $< -o $@ $(CFLAGS)
 
 clean:
 	rm -f $(OBJS) a.out
