@@ -4,6 +4,8 @@
 
 #include <math.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <x86intrin.h>
@@ -12,7 +14,9 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-#define LINALG_EPSILON 0.001f
+#define special __host__ __device__
+
+#define LINALG_EPSILON 0.0001f
 
 static const int WIDTH = 1920;
 static const int HEIGHT = 1080;

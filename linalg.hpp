@@ -1,13 +1,13 @@
-#include "consts.h"
-#include "mat.h"
-#include "vec.h"
+#include "consts.hpp"
+#include "mat.hpp"
+#include "vec.hpp"
 
 typedef struct ray {
-	vec3 origin;
-	vec3 direction;
+	float3 origin;
+	float3 direction;
 } ray;
 
-typedef vec4 plane;
+typedef float4 plane;
 
 /**
  * @brief Get the line of intersection between two planes
@@ -17,7 +17,7 @@ typedef vec4 plane;
  * @param b The second plane
  * @return false if the planes are parallel, true otherwise
  */
-bool intersect_plane_plane(ray *, const plane *, const plane *);
+special bool intersect_plane_plane(ray *, const plane *, const plane *);
 
 /**
  * @brief Get the point of intersection between a plane and a line
@@ -27,7 +27,7 @@ bool intersect_plane_plane(ray *, const plane *, const plane *);
  * @param b The line
  * @return false if the plane and line are parallel, true otherwise
  */
-bool intersect_plane_line(vec3 *, const plane *, const ray *);
+special bool intersect_plane_line(float3 *, const plane *, const ray *);
 
 /**
  * @brief Get the point of intersection between two lines
@@ -37,7 +37,7 @@ bool intersect_plane_line(vec3 *, const plane *, const ray *);
  * @param b The second line
  * @return false if the lines are parallel, true otherwise
  */
-bool intersect_line_line(vec3 *, const ray *, const ray *);
+special bool intersect_line_line(float3 *, const ray *, const ray *);
 
 /**
  * @brief Check if a point is in a triangle
@@ -49,7 +49,7 @@ bool intersect_line_line(vec3 *, const ray *, const ray *);
  * @param c p3 of the triangle
  * @return Whether the point is in the triangle
  */
-bool point_in_triangle(const vec3 *, const vec3 *, const vec3 *, const vec3 *);
+special bool point_in_triangle(const float3 *, const float3 *, const float3 *, const float3 *);
 
 /**
  * @brief Get the point(s) of intersection between a plane and a triangle
@@ -62,4 +62,4 @@ bool point_in_triangle(const vec3 *, const vec3 *, const vec3 *, const vec3 *);
  * @param d p3 of the triangle
  * @return Number of intersections
  */
-int intersect_plane_triangle(vec3 *, vec3 *, const plane *, const vec3 *, const vec3 *, const vec3 *);
+special int intersect_plane_triangle(float3 *, float3 *, const plane *, const float3 *, const float3 *, const float3 *);

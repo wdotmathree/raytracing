@@ -1,6 +1,6 @@
-#include "transform.h"
+#include "transform.hpp"
 
-void translate(float out[4][4], float x, float y, float z) {
+special void translate(float out[4][4], float x, float y, float z) {
 	memset(out, 0, sizeof(float) * 16);
 	out[0][0] = 1;
 	out[1][1] = 1;
@@ -11,7 +11,7 @@ void translate(float out[4][4], float x, float y, float z) {
 	out[2][3] = z;
 }
 
-void rotateX(float out[4][4], float x) {
+special void rotateX(float out[4][4], float x) {
 	x = x * M_PI / 180;
 	memset(out, 0, sizeof(float) * 16);
 	out[0][0] = 1;
@@ -22,7 +22,7 @@ void rotateX(float out[4][4], float x) {
 	out[3][3] = 1;
 }
 
-void rotateY(float out[4][4], float y) {
+special void rotateY(float out[4][4], float y) {
 	y = y * M_PI / 180;
 	memset(out, 0, sizeof(float) * 16);
 	out[0][0] = cos(y);
@@ -33,7 +33,7 @@ void rotateY(float out[4][4], float y) {
 	out[3][3] = 1;
 }
 
-void rotateZ(float out[4][4], float z) {
+special void rotateZ(float out[4][4], float z) {
 	z = z * M_PI / 180;
 	memset(out, 0, sizeof(float) * 16);
 	out[0][0] = cos(z);
@@ -44,7 +44,7 @@ void rotateZ(float out[4][4], float z) {
 	out[3][3] = 1;
 }
 
-void scale(float out[4][4], float x, float y, float z) {
+special void scale(float out[4][4], float x, float y, float z) {
 	memset(out, 0, sizeof(float) * 16);
 	out[0][0] = x;
 	out[1][1] = y;
@@ -52,7 +52,7 @@ void scale(float out[4][4], float x, float y, float z) {
 	out[3][3] = 1;
 }
 
-void project(float out[4][4], float fov, float aspect, float near, float far) {
+special void project(float out[4][4], float fov, float aspect, float near, float far) {
 	float f = 1 / tan(fov / 2 * M_PI / 180);
 	float q = far / (far - near);
 	memset(out, 0, sizeof(float) * 16);
@@ -63,7 +63,7 @@ void project(float out[4][4], float fov, float aspect, float near, float far) {
 	out[3][3] = 1;
 }
 
-void to_screen(vec3 *out, vec3 *in) {
+special void to_screen(float3 *out, float3 *in) {
 	out->x = (in->x / in->z + 1) * WIDTH / 2;
 	out->y = (in->y / in->z + 1) * HEIGHT / 2;
 	out->z = in->z;
