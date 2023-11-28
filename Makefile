@@ -1,5 +1,5 @@
 CC=nvcc
-CFLAGS=-rdc=true -lm -lpthread -g $(shell sdl2-config --cflags --libs)
+CFLAGS=-rdc=true -lm -lpthread -g
 SRCS=$(wildcard *.cu)
 HDRS=$(wildcard *.hpp)
 OBJS=$(SRCS:.cu=.o)
